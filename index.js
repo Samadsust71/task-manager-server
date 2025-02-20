@@ -3,15 +3,15 @@ const express = require("express");
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
 const cookieParser = require("cookie-parser");
+const http = require("http");
+const WebSocket = require("ws");
 const app = express();
 const port = process.env.PORT || 3000;
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 
 app.use(
   cors({
-    origin: [
-      "http://localhost:5173",
-    ],
+    origin: ["http://localhost:5173"],
   })
 );
 app.use(cookieParser());
@@ -49,7 +49,7 @@ async function run() {
 
     const DB = client.db("taskManagerDB");
     const taskCollection = DB.collection("tasks");
-    
+
     //--------- auth token apis----------
     app.post("/jwt", async (req, res) => {
       const user = req.body;
@@ -68,23 +68,23 @@ async function run() {
         })
         .send({ message: "Log out successfully" });
     });
-     // Create a new task
+    // Create a new task
     app.post("/tasks", async (req, res) => {
-        const task = req.body;
-        const result = await taskCollection.insertOne(task);
-        res.send(result);
-      });
-      app.get("/tasks", async (req, res) => {
-        const result = await taskCollection.find().toArray();
-        res.send(result);
-      });
+      const task = req.body;
+      const result = await taskCollection.insertOne(task);
+      res.send(result);
+    });
+    app.get("/tasks", async (req, res) => {
+      const result = await taskCollection.find().toArray();
+      res.send(result);
+    });
 
-      app.delete("/task/:id", async (req, res) => {
-        const id = req.params.id;
-        const query = { _id: new ObjectId(id) };
-        const result = await taskCollection.deleteOne(query);
-        res.send(result);
-      });
+    app.delete("/task/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await taskCollection.deleteOne(query);
+      res.send(result);
+    });
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log(
@@ -97,6 +97,31 @@ run().catch(console.dir);
 
 app.get("/", (req, res) => {
   res.send("Task Manager server is running");
+});
+
+// Create HTTP server
+const server = http.createServer(app);
+
+// Set up WebSocket server on the same HTTP server
+const wss = new WebSocket.Server({ server });
+
+wss.on("connection", (ws) => {
+  console.log("New WebSocket client connected");
+
+  ws.on("message", (message) => {
+    console.log("Received:", message);
+    ws.send(`Server received: ${message}`);
+  });
+
+  ws.on("close", () => {
+    console.log("Client disconnected");
+  });
+
+  ws.on("error", (error) => {
+    console.error("WebSocket error:", error);
+  });
+
+  ws.send("Welcome to the WebSocket server!");
 });
 
 app.listen(port, () => {
