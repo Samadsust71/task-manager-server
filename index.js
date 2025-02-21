@@ -10,7 +10,14 @@ const server = http.createServer(app);
 const port = process.env.PORT || 3000;
 
 // Middleware
-app.use(cors());
+app.use( cors({
+    origin: [
+      "http://localhost:5173",
+      "https://task-manager-app-b251b.web.app",
+      "https://task-manager-app-b251b.firebaseapp.com",
+    ],
+    credentials: true,
+  }));
 app.use(express.json());
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.qo68l.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
